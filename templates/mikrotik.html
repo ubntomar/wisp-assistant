@@ -1,0 +1,562 @@
+{% extends 'base.html' %}
+{% block title %}Mikrotik{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Configuración del Dispositivo MikroTik</h1>
+    <div id="status-message" class="alert" style="display: none;"></div>
+    
+    {% if not network_connected %}
+        <div id="network-alert" class="alert alert-danger" role="alert">
+            Cable de red desconectado
+        </div>
+    {% else %}
+        <div id="network-alert" class="alert alert-danger" role="alert" style="display: none;">
+            Cable de red desconectado
+        </div>
+    {% endif %}
+    
+    <button id="connect-btn" class="btn btn-primary mb-3">Conectar a MikroTik</button>
+    
+    <div id="wireless-section" style="display: none;">
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h2 class="mb-0">Redes Inalámbricas Disponibles</h2>
+            </div>
+            <div class="card-body">
+                <div id="scan-status" class="mb-2 text-muted"></div>
+                <div id="redes-list" class="list-group mb-3"></div>
+                <button id="connect-wireless-btn" class="btn btn-success" disabled>Conectar a Red Seleccionada</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="ip-config-section" style="display: none;">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0">Configuración IP</h2>
+            </div>
+            <div class="card-body">
+                <div class="form-row mb-3">
+                    <div class="col">
+                        <label for="ip-1">IP Address</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="ip-1" value="192" disabled>
+                            <input type="text" class="form-control" id="ip-2" value="168" disabled>
+                            <input type="number" class="form-control" id="ip-3" min="0" max="255" value="">
+                            <input type="number" class="form-control" id="ip-4" min="2" max="254" value="">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="netmask">Netmask</label>
+                    <input type="text" class="form-control" id="netmask" value="255.255.255.0" disabled>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="gateway">Gateway</label>
+                    <input type="text" class="form-control" id="gateway" disabled>
+                </div>
+                <button id="apply-changes-btn" class="btn btn-primary">Aplicar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="ping-results" style="display: none;">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0">Tiempos de Respuesta</h3>
+            </div>
+            <div class="card-body">
+                <p>Ping a Gateway: <span id="gateway-ping" class="badge bg-primary">-</span> ms</p>
+                <p>Ping a Google: <span id="google-ping" class="badge bg-primary">-</span> ms</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let scanning = false;
+    let connected = false;
+    let selectedNetwork = null;
+    let networkList = {};
+    const SCAN_INTERVAL = 7200; // 5 segundos
+    const PING_INTERVAL = 1000; // 5 segundos
+    let connectionInfoInterval;
+    let currentNetworkInfo = null;
+    let pingEndpoint = '/mikrotik/get_ping_times';
+    let pingInterval;
+    let ipInputStatus = true;
+
+    function showMessage(message, isError = false) {
+        const statusDiv = document.getElementById('status-message');
+        statusDiv.textContent = message;
+        statusDiv.className = isError ? 'alert alert-danger' : 'alert alert-success';
+        statusDiv.style.display = 'block';
+        setTimeout(() => {
+            statusDiv.style.display = 'none';
+        }, 5000);
+    }
+
+    function updateNetworkList(redes) {
+        Object.keys(networkList).forEach(key => {
+            networkList[key].available = false;
+        });
+
+        redes.forEach(red => {
+            const key = `${red.ssid}-${red.frequency}`;
+            if (networkList[key]) {
+                networkList[key].signal = red.signal;
+                networkList[key].available = true;
+            } else {
+                red.available = true;
+                networkList[key] = red;
+            }
+        });
+    }
+
+    function renderNetworkList() {
+        const redesList = document.getElementById('redes-list');
+        
+        if (Object.keys(networkList).length === 0) {
+            redesList.innerHTML = '<div class="list-group-item">No se han encontrado redes</div>';
+            return;
+        }
+
+        redesList.innerHTML = '';
+        Object.values(networkList).forEach(red => {
+            const item = document.createElement('a');
+            item.href = '#';
+            item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+            item.setAttribute('data-ssid', red.ssid);
+            item.setAttribute('data-frequency', red.frequency);
+            item.setAttribute('data-available', red.available.toString());
+
+            const signalDisplay = red.available ? `${red.signal} dBm` : '?';
+            
+            item.innerHTML = `
+                <div>
+                    <h5 class="mb-1">${red.ssid}</h5>
+                    <p class="mb-1">${red.frequency} MHz - ${red.ubicacion || 'Desconocida'}</p>
+                </div>
+                <span class="badge rounded-pill ${red.available ? 'bg-success' : 'bg-danger'}">${signalDisplay}</span>
+            `;
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                selectNetwork(red);
+            });
+            redesList.appendChild(item);
+        });
+
+        // Si hay una red seleccionada, asegúrate de que se muestre como activa
+        if (selectedNetwork) {
+            selectNetwork(selectedNetwork);
+        }
+    }
+
+    function selectNetwork(red) {
+        selectedNetwork = red;
+        
+        // Remover la clase 'active' de todos los elementos
+        document.querySelectorAll('#redes-list a').forEach(item => {
+            item.classList.remove('active');
+            // Restaurar el color del badge
+            const badge = item.querySelector('.badge');
+            if (badge) {
+                badge.classList.remove('bg-primary');
+                badge.classList.add(item.getAttribute('data-available') === 'true' ? 'bg-success' : 'bg-danger');
+            }
+        });
+
+        // Encontrar el elemento seleccionado y aplicar los estilos
+        const selectedItem = document.querySelector(`#redes-list a[data-ssid="${red.ssid}"][data-frequency="${red.frequency}"]`);
+        if (selectedItem) {
+            selectedItem.classList.add('active');
+            // Cambiar el color del badge del elemento seleccionado
+            const badge = selectedItem.querySelector('.badge');
+            if (badge) {
+                badge.classList.remove('bg-success', 'bg-danger');
+                badge.classList.add('bg-primary');
+            }
+        }
+
+        updateConnectButton();
+    }
+
+    function selectNetwork(red) {
+        selectedNetwork = red;
+        
+        // Remover la clase 'active' de todos los elementos
+        document.querySelectorAll('#redes-list a').forEach(item => {
+            item.classList.remove('active');
+            //item.style.backgroundColor = item.classList.contains('available') ? '#c3e6cb' : '#f5c6cb';
+        });
+
+        // Encontrar el elemento seleccionado y aplicar los estilos
+        const selectedItem = document.querySelector(`#redes-list a[data-ssid="${red.ssid}"][data-frequency="${red.frequency}"]`);
+        if (selectedItem) {
+            selectedItem.classList.add('active');
+        }
+
+        updateConnectButton();
+    }
+
+    function scanNetworks() {
+        if (!scanning || connected || isConnecting) return;
+        
+        const scanStatus = document.getElementById('scan-status');
+        const redesList = document.getElementById('redes-list');
+
+        if (!scanStatus || !redesList) {
+            console.error('Elementos de escaneo no encontrados');
+            return;
+        }
+
+        const now = new Date();
+        console.log(`Iniciando escaneo a las ${now.toLocaleTimeString()}.${now.getMilliseconds()}`);
+        scanStatus.textContent = 'Escaneando...';
+        
+        fetch('/mikrotik/scan_networks', { 
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ connected: connected })
+        })
+        .then(response => response.json())
+        .then(data => {
+            const endTime = new Date();
+            console.log(`Escaneo completado a las ${endTime.toLocaleTimeString()}.${endTime.getMilliseconds()}`);
+            
+            if (scanning && !connected && !isConnecting) {
+                if (data.status === 'success') {
+                    updateNetworkList(data.redes);
+                    renderNetworkList();
+                    scanStatus.textContent = 'Último escaneo: ' + endTime.toLocaleTimeString();
+                } else {
+                    throw new Error(data.message || 'Error desconocido al escanear');
+                }
+            } else {
+                console.log('Escaneo completado, pero ya no estamos en modo de escaneo, estamos conectados o intentando conectar. Ignorando resultados.');
+            }
+        })
+        .catch(error => {
+            console.error('Error al escanear redes:', error);
+            if (scanning && !connected && !isConnecting) {
+                scanStatus.textContent = 'Error en el último escaneo';
+            }
+        });
+    }
+
+    function startScanning() {
+        if (!scanning) {
+            scanning = true;
+            scanNetworks(); // Realizar un escaneo inmediato
+            scanInterval = setInterval(scanNetworks, SCAN_INTERVAL);
+        }
+    }
+
+    function stopScanning() {
+        scanning = false;
+        clearInterval(scanInterval);
+    }
+
+    let isConnecting = false;
+
+    function connectWireless() {
+        if (!selectedNetwork) {
+            showMessage('No se ha seleccionado ninguna red', true);
+            return;
+        }
+        
+        isConnecting = true;
+        showMessage('Conectando a la red...', false);
+        
+        fetch('/mikrotik/connect_wireless', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ red_seleccionada: selectedNetwork }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                connected = true;
+                showMessage('Conexión establecida con éxito', false);
+                const redesList = document.getElementById('redes-list');
+                redesList.innerHTML = `
+                    <div class="list-group-item">
+                        <h5 class="mb-1">Preparando info del enlace</h5>
+                    </div>
+                    `;
+                updateConnectButton();
+                stopScanning();
+                startConnectionInfoUpdate();
+            } else {
+                throw new Error(data.message || 'Error desconocido al conectar');
+            }
+        })
+        .catch(error => {
+            showMessage('Error al conectar a la red: ' + error.message, true);
+        })
+        .finally(() => {
+            isConnecting = false;  // Asegurarse de que isConnecting se establezca en false al final
+        });
+    }
+
+    function disconnectWireless() {
+        fetch('/mikrotik/disconnect_wireless', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                connected = false;
+                selectedNetwork = null;
+                showMessage('Desconectado de la red inalámbrica', false);
+                updateConnectButton();
+                stopConnectionInfoUpdate();
+                const redesList = document.getElementById('redes-list');
+                redesList.innerHTML = `
+                    <div class="list-group-item">
+                        <h5 class="mb-1">Preparando resultados de escaneo</h5>
+                    </div>
+                    `;
+                startScanning();
+            } else {
+                showMessage(data.message, true);
+            }
+        })
+        .catch(error => {
+            showMessage('Error al desconectar de la red: ' + error.message, true);
+        });
+    }
+
+    function startConnectionInfoUpdate() {
+        stopScanning();
+        updateConnectionInfo();
+        connectionInfoInterval = setInterval(updateConnectionInfo, 1000);
+    }
+
+    function stopConnectionInfoUpdate() {
+        clearInterval(connectionInfoInterval);
+    }
+
+    function updateConnectionInfo() {
+        fetch('/mikrotik/get_connection_info', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                renderConnectionInfo(data.info);
+            } else {
+                console.error('Error al obtener información de conexión:', data.message);
+                renderConnectionInfo(data.info);
+            }
+        })
+        .catch(error => {
+            console.error('Error al obtener información de conexión:', error);
+        });
+    }
+
+    function updateIpConfig() {
+        const ip3 = document.getElementById('ip-3').value;
+        const ip4 = document.getElementById('ip-4').value;
+        const gateway = document.getElementById('gateway');
+        gateway.value = `192.168.${ip3}.1`;
+        updatePingTargets();
+    }
+
+    function validateIpInput(input) {
+        let value = parseInt(input.value);
+        if (isNaN(value) || value < parseInt(input.min) || value > parseInt(input.max) || value == 88 ) {
+            input.classList.add('is-invalid');
+            ipInputStatus = true;
+        } else {
+            input.classList.remove('is-invalid');
+            ipInputStatus = false;
+        }
+        updateIpConfig();
+        updateApplyButton();
+    }
+
+    function updatePingTargets() {
+        const ip3 = document.getElementById('ip-3').value;
+        const gateway = `192.168.${ip3}.1`;
+        pingEndpoint = `/mikrotik/get_ping_times?gateway=${gateway}`;
+    }
+
+    function startPingUpdates() {
+        if (pingInterval) {
+            clearInterval(pingInterval);
+        }
+        pingInterval = setInterval(updatePingTimes, PING_INTERVAL);
+    }
+
+    function updatePingTimes() {
+        updateIpConfig()
+        fetch(pingEndpoint)
+            .then(response => response.json())
+            .then(data => {
+                const gateway=data.gateway;
+                document.getElementById('gateway-ping').textContent = data.gateway_ping ? ` ${gateway} :  ${ data.gateway_ping.toFixed(2)}` : `${gateway}  ---`;
+                document.getElementById('google-ping').textContent = data.google_ping ? data.google_ping.toFixed(2) : '-';
+            })
+            .catch(error => console.error('Error al obtener tiempos de ping:', error));
+    }
+
+    function renderConnectionInfo(info) {
+        const redesList = document.getElementById('redes-list');
+        redesList.innerHTML = `
+            <div class="list-group-item">
+                <h5 class="mb-1">${selectedNetwork ? selectedNetwork.ssid : 'Red desconocida'}</h5>
+                <p class="mb-1">Interfaz: ${info.interface}</p>
+                <p class="mb-1">Nombre de Radio: ${info.radio_name}</p>
+                <p class="mb-1">MAC: ${info.mac_address}</p>
+                <p class="mb-1">AP: ${info.ap}</p>
+                <p class="mb-1">Intensidad de Señal: ${info.signal_strength}</p>
+                <p class="mb-1">Velocidad de Transmisión: ${info.tx_rate}</p>
+                <p class="mb-1">Tiempo conectado: ${info.uptime}</p>
+            </div>
+        `;
+        
+    }
+
+    async function getNetworkInfo() {
+        try {
+            const response = await fetch('/mikrotik/get_network_info');
+            const data = await response.json();
+            await updateIpConfigDisplay(data);
+        } catch (error) {
+            console.error("Error al obtener la información de red:", error);
+        }
+    }
+
+
+    function updateIpConfigDisplay(info) {
+        try {
+            const [ip1, ip2, ip3, ip4] = info.ip.split('.');
+            document.getElementById('ip-1').value = ip1;
+            document.getElementById('ip-2').value = ip2;
+            document.getElementById('ip-3').value = ip3;
+            document.getElementById('ip-4').value = ip4;
+            document.getElementById('netmask').value = info.netmask;
+            document.getElementById('gateway').value = info.gateway;
+        } catch (error) {
+            console.error("Error al actualizar la información de ip dentro de updateIpConfigDisplay:", error);
+        }
+    }
+
+    function applyChanges() {
+        const ip = `${document.getElementById('ip-1').value}.${document.getElementById('ip-2').value}.${document.getElementById('ip-3').value}.${document.getElementById('ip-4').value}`;
+        const netmask = `${document.getElementById('netmask').value}`;
+        const gateway = `${document.getElementById('gateway').value}`;
+
+
+        fetch('/mikrotik/apply_network_config', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                interface: currentNetworkInfo,
+                ip: ip,
+                netmask: netmask,
+                gateway: gateway
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showMessage('Configuración aplicada con éxito', false);
+                updatePingTargets();
+            } else {
+                showMessage(`Error al aplicar la configuración: ${data.message}`, true);
+            }
+        })
+        .catch(error => {
+            showMessage(`Error al aplicar la configuración: ${error}`, true);
+        });
+    }
+
+
+    function updateConnectButton() {
+        const button = document.getElementById('connect-wireless-btn');
+        button.textContent = connected ? 'Desconectar de Red Seleccionada' : 'Conectar a Red Seleccionada';
+        button.disabled = !selectedNetwork && !connected;
+    }
+    function updateApplyButton() {
+        const button = document.getElementById('apply-changes-btn');
+        button.disabled = ipInputStatus;
+    }
+
+    function toggleWirelessConnection() {
+        if (connected) {
+            disconnectWireless();
+        } else {
+            connectWireless();
+        }
+    }
+
+    function updateNetworkStatus() {
+        fetch('/mikrotik/update_status')
+            .then(response => response.json())
+            .then(data => {
+                const networkAlert = document.getElementById('network-alert');
+                if (networkAlert) {
+                    networkAlert.style.display = data.network_connected ? 'none' : 'block';
+                }
+            });
+    }
+
+    function connectToMikrotik() {
+        const statusDiv = document.getElementById('status-message');
+        const connectBtn = document.getElementById('connect-btn');
+        const wirelessSection = document.getElementById('wireless-section');
+
+        statusDiv.textContent = 'Conectando a MikroTik...';
+        statusDiv.className = 'alert alert-info';
+        statusDiv.style.display = 'block';
+        connectBtn.disabled = true;
+
+        fetch('/mikrotik/connect', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                currentNetworkInfo = data.interface;
+                statusDiv.textContent = 'Conectado a Antena OK.';
+                statusDiv.className = 'alert alert-success';
+                connectBtn.style.display = 'none';
+                wirelessSection.style.display = 'block';
+                document.getElementById('ip-config-section').style.display = 'block';
+                document.getElementById('ping-results').style.display = 'block';
+                getNetworkInfo();
+                startPingUpdates();
+                startScanning();
+            } else {
+                throw new Error(data.message || 'Error desconocido al conectar');
+            }
+        })
+        .catch(error => {
+            console.error('Error al conectar a MikroTik:', error);
+            statusDiv.textContent = `Error al conectar: ${error.message}`;
+            statusDiv.className = 'alert alert-danger';
+            connectBtn.disabled = false;
+        })
+        .finally(() => {
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        });
+    }
+
+    document.getElementById('connect-btn').addEventListener('click', connectToMikrotik);
+    document.getElementById('connect-wireless-btn').addEventListener('click', toggleWirelessConnection);
+    document.getElementById('ip-3').addEventListener('input', function() { validateIpInput(this); });
+    document.getElementById('ip-4').addEventListener('input', function() { validateIpInput(this); });
+    document.getElementById('apply-changes-btn').addEventListener('click', applyChanges);
+
+
+    // Actualizar el estado de la red cada 5 segundos
+    setInterval(updateNetworkStatus, 5000);
+</script>
+{% endblock %}

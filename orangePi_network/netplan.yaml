@@ -1,0 +1,20 @@
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      dhcp4: true
+      addresses:
+        - 192.168.0.50/24
+        - 192.168.1.50/24
+        - 192.168.101.50/24
+        - 192.168.100.50/24
+        - 192.168.88.50/24
+  wifis:
+    wlan0:
+      dhcp4: no
+      addresses:
+        - 192.168.77.1/24
+      access-points:
+        "SSID_NAME":
+          password: "SSID_PASSWORD"

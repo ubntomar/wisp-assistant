@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Router{% endblock %}
+
+{% block content %}
+    <h1>Página de la marca de router: {{ brand }}</h1>
+
+    {% if not network_connected %}
+        <div id="network-alert" class="alert alert-danger" role="alert">
+            Cable de red desconectado
+        </div>
+    {% else %}
+        <div id="network-alert" class="alert alert-danger" role="alert" style="display: none;">
+            Cable de red desconectado
+        </div>
+    {% endif %}
+
+    {% if any_link_damaged %}
+        <div id="link-damaged-alert" class="alert alert-warning" role="alert">
+            Puerto o Cable conectado DAÑADO
+        </div>
+    {% else %}
+        <div id="link-damaged-alert" class="alert alert-warning" role="alert" style="display: none;">
+            Puerto o Cable conectado DAÑADO
+        </div>
+    {% endif %}
+
+    <!-- Aquí puedes agregar el contenido específico de la página de router -->
+
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        function updateNetworkStatus() {
+            fetch('/update_status')
+                .then(response => response.json())
+                .then(data => {
+                    const networkAlert = document.getElementById('network-alert');
+                    if (data.network_connected) {
+                        networkAlert.style.display = 'none';
+                    } else {
+                        networkAlert.style.display = 'block';
+                    }
+                });
+        }
+
+        function updateLinkDamagedStatus() {
+            fetch('/update_status')
+                .then(response => response.json())
+                .then(data => {
+                    const linkDamagedAlert = document.getElementById('link-damaged-alert');
+                    if (data.any_link_damaged) {
+                        linkDamagedAlert.style.display = 'block';
+                    } else {
+                        linkDamagedAlert.style.display = 'none';
+                    }
+                });
+        }
+
+        setInterval(updateNetworkStatus, 5000);
+        setInterval(updateLinkDamagedStatus, 5000);
+    </script>
+{% endblock %}

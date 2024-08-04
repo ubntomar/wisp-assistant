@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">Orange Pi</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">Inicio</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="routerDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Router
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="routerDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('router.router_page', brand='Tenda') }}">Tenda</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('router.router_page', brand='Tp-link') }}">Tp-link</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('router.router_page', brand='Mercusys') }}">Mercusys</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('router.router_page', brand='Nexxt') }}">Nexxt</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('router.router_page', brand='Latic') }}">Latic</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('router.router_page', brand='Fibra Andina') }}">Fibra Andina</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('router.router_page', brand='Huawei') }}">Huawei</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'mikrotik.mikrotik_page' %}active{% endif %}" href="{{ url_for('mikrotik.mikrotik_page') }}">Mikrotik</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    {% if not network_connected %}
+        <div class="alert alert-danger" role="alert">
+            Cable de red desconectado
+        </div>
+    {% endif %}
+
+    <div class="container mt-5">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

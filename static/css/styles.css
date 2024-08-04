@@ -1,0 +1,14 @@
+body { background-color: #3C4A59; color: #E3F1A9; }
+.card { margin-bottom: 20px; background-color: #44BBA4; }
+.card-header { background-color: #A7D46F; color: #3C4A59; }
+.ip-block { background-color: #44BBA4; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+.link-speed { display: inline-block; padding: 5px 10px; border-radius: 5px; font-weight: bold; }
+.updating { animation: blink 1s infinite; font-size: 0.8em; padding: 2px 5px; border-radius: 3px; margin-left: 5px; }
+.damaged-warning { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; padding: .75rem 1.25rem; margin-bottom: 1rem; border: 1px solid transparent; border-radius: .25rem; }
+@keyframes blink { 50% { opacity: 0.5; } }
+.navbar { background-color: #44BBA4; }
+.navbar-brand, .navbar-nav .nav-link { color: #E3F1A9; }
+.navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%280, 0, 0, 0.55%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+.dropdown-menu { background-color: #44BBA4; }
+.dropdown-item { color: #E3F1A9; }
+.dropdown-item:hover { background-color: #A7D46F; color: #3C4A59; }

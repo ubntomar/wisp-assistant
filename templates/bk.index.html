@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}Inicio{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">¡Hola desde Orange Pi!</h1>
+    <p>Hostname del servidor: {{ hostname }}</p>
+    
+    {% if not network_connected %}
+        <div id="network-alert" class="alert alert-danger" role="alert">
+            Cable de red desconectado
+        </div>
+    {% else %}
+        <div id="network-alert" class="alert alert-danger" role="alert" style="display: none;">
+            Cable de red desconectado
+        </div>
+    {% endif %}
+
+    {% if any_link_damaged %}
+        <div id="link-damaged-alert" class="alert alert-warning" role="alert">
+            Puerto o Cable conectado DAÑADO
+        </div>
+    {% else %}
+        <div id="link-damaged-alert" class="alert alert-warning" role="alert" style="display: none;">
+            Puerto o Cable conectado DAÑADO
+        </div>
+    {% endif %}
+    
+    <h2 class="mt-4">Información de Red</h2>
+    <div id="interfaces-container">
+        {% for iface, info in interfaces.items() %}
+            <div class="card" id="iface-{{ iface }}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3>{{ iface }}</h3>
+                    <span class="link-speed {% if info.is_damaged %}bg-danger{% else %}bg-success{% endif %} text-white">
+                        {{ info.link_speed if info.link_speed else 'No link' }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    {% if info.is_damaged %}
+                        <div class="damaged-warning">
+                            Puerto o Cable conectado DAÑADO
+                        </div>
+                    {% endif %}
+                    {% if info.is_up %}
+                        {% if info.ips %}
+                            {% for addr in info.ips %}
+                                <div class="ip-block text-white" id="ip-{{ addr.ip.replace('.', '-') }}">
+                                    <p><strong>IP:</strong> {{ addr.ip }} ({{ 'DHCP' if addr.is_dhcp else 'Estática' }})</p>
+                                    <p><strong>Gateway:</strong> {{ addr.gateway }}
+                                        {% if addr.response_time %}
+                                            ({{ addr.response_time|round(2) }} ms)
+                                        {% endif %}
+                                    </p>
+                                    <p><strong>Estado:</strong> Activo</p>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-warning">
+                                Interfaz activa pero sin IPs configuradas
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-danger">
+                            Cable de red desconectado
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        function updateStatus() {
+            fetch('/update_status')
+                .then(response => response.json())
+                .then(data => {
+                    for (let iface in data.interface_states) {
+                        let ifaceElement = document.getElementById('iface-' + iface);
+                        if (ifaceElement) {
+                            let cardBody = ifaceElement.querySelector('.card-body');
+                            let linkSpeedElement = ifaceElement.querySelector('.link-speed');
+                            let interfaceState = data.interface_states[iface];
+                            
+                            linkSpeedElement.textContent = interfaceState.link_speed || 'No link';
+                            linkSpeedElement.className = `link-speed ${interfaceState.is_damaged ? 'bg-danger' : 'bg-success'} text-white`;
+
+                            let content = '';
+                            if (interfaceState.is_damaged) {
+                                content += `
+                                    <div class="damaged-warning">
+                                        Puerto o Cable conectado DAÑADO
+                                    </div>
+                                `;
+                            }
+
+                            if (interfaceState.active) {
+                                let ips = Object.keys(data.ip_states).filter(ip => data.ip_states[ip].interface === iface && data.ip_states[ip].active);
+                                if (ips.length > 0) {
+                                    content += ips.map(ip => `
+                                        <div class="ip-block text-white" id="ip-${ip.replace(/\./g, '-')}">
+                                            <p><strong>IP:</strong> ${ip} (${data.ip_states[ip].is_dhcp ? 'DHCP' : 'Estática'})</p>
+                                            <p><strong>Gateway:</strong> ${get_gateway(ip)}
+                                                ${data.ip_states[ip].response_time ? `(${data.ip_states[ip].response_time.toFixed(2)} ms)` : ''}
+                                            </p>
+                                            <p><strong>Estado:</strong> Activo</p>
+                                        </div>
+                                    `).join('');
+                                } else {
+                                    content += `
+                                        <div class="alert alert-warning">
+                                            Interfaz activa pero sin IPs configuradas
+                                        </div>
+                                    `;
+                                }
+                            } else {
+                                content += `
+                                    <div class="alert alert-danger">
+                                        Cable de red desconectado
+                                    </div>
+                                `;
+                            }
+                            cardBody.innerHTML = content;
+                        }
+                    }
+                });
+        }
+
+        function get_gateway(ip) {
+            let parts = ip.split('.');
+            parts[3] = '1';
+            return parts.join('.');
+        }
+
+        function updateNetworkStatus() {
+            fetch('/update_status')
+                .then(response => response.json())
+                .then(data => {
+                    const networkAlert = document.getElementById('network-alert');
+                    if (data.network_connected) {
+                        networkAlert.style.display = 'none';
+                    } else {
+                        networkAlert.style.display = 'block';
+                    }
+                });
+        }
+
+        function updateLinkDamagedStatus() {
+            fetch('/update_status')
+                .then(response => response.json())
+                .then(data => {
+                    const linkDamagedAlert = document.getElementById('link-damaged-alert');
+                    if (data.any_link_damaged) {
+                        linkDamagedAlert.style.display = 'block';
+                    } else {
+                        linkDamagedAlert.style.display = 'none';
+                    }
+                });
+        }
+
+        setInterval(updateStatus, 5000);
+        setInterval(updateNetworkStatus, 5000);
+        setInterval(updateLinkDamagedStatus, 5000);
+    </script>
+{% endblock %}
