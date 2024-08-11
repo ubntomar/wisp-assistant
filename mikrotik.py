@@ -235,9 +235,27 @@ def configurar_mikrotik(frecuencias):
     # Extraer frecuencias numéricas y configurar "Scan List"
     frecuencias_numericas = ','.join(str(freq['frecuencia']) for freq in frecuencias)
     config_general = f"/interface wireless set {interfaz_wireless} mode=station-bridge band={banda} channel-width=20mhz radio-name=[/system identity get name] wireless-protocol=nv2 frequency-mode=superchannel country=etsi2 scan-list={frecuencias_numericas}"
-    #                f"/interface wireless set [ f                 mode=station-bridge band={banda} channel-width=20mhz radio-name=[/system identity get name] wireless-protocol=nv2 frequency-mode=superchannel country=etsi2 ssid=\"{red_seleccionada['ssid']}\" frequency={red_seleccionada['frecuencia']} nv2-security=enabled nv2-preshared-key=\"{red_seleccionada['claveNv2']}\""
     exec_command(config_general)
     print(f"Configuración general de la interfaz inalámbrica aplicada con scan-list: {frecuencias_numericas}")
+
+def obtener_clave_nv2_desde_json (ssid):
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        json_path = os.path.join(script_dir, 'wireless_config.json')
+        
+        with open(json_path, 'r') as f:
+            data = json.load(f)
+        for red in data:
+            if red['ssid'] == ssid:
+                return red['claveNv2']
+    except FileNotFoundError:
+        print(f"Error: No se pudo encontrar el archivo 'wireless_config.json'.")
+        return []
+    except json.JSONDecodeError:
+        print(f"Error: El archivo 'wireless_config.json' no es un JSON válido.")
+        return []
+    
+
 
 def ping(host):
     try:
@@ -349,11 +367,19 @@ def connect_wireless():
     global interfaz_wireless
     data = request.json
     red_seleccionada = data.get('red_seleccionada')
+    clave=obtener_clave_nv2_desde_json(red_seleccionada['ssid'])
+    if clave:
+        nv2Security = "nv2-security=enabled"
+        nv2PreSharedKey = f"nv2-preshared-key=\"{clave}\""
+    else:
+        nv2Security = "nv2-security=disabled"
+        nv2PreSharedKey = "nv2-preshared-key=\"\""
     if not red_seleccionada:
         return jsonify({'status': 'error', 'message': 'No se seleccionó ninguna red'})
 
     try:
-        config_command = f"/interface wireless set {interfaz_wireless} ssid=\"{red_seleccionada['ssid']}\" frequency={red_seleccionada['frequency']}"
+        config_command = f"/interface wireless set {interfaz_wireless} ssid=\"{red_seleccionada['ssid']}\" frequency={red_seleccionada['frequency']} {nv2PreSharedKey}  {nv2Security} "
+        print (f"-------------------------------------------------------------------config_command: {config_command}")
         exec_command(config_command)
         return jsonify({'status': 'success', 'message': 'Conexión establecida con éxito'})
     except Exception as e:
