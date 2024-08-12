@@ -1,17 +1,12 @@
 import subprocess
 import re
 from flask import Blueprint, render_template, current_app
-<<<<<<< HEAD
 from flask import request, jsonify
 
 from time import sleep
 import requests
 from playwright.sync_api import sync_playwright
 import logging
-=======
-import subprocess
-from flask import request, jsonify
->>>>>>> b1d33405dc68a124f8072cde417a396a49c9e7d0
 
 router_bp = Blueprint('router', __name__, url_prefix='/router')
 
