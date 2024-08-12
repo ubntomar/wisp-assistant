@@ -24,15 +24,22 @@
             Puerto o Cable conectado DAÑADO
         </div>
     {% endif %}
+<<<<<<< HEAD
     <h3>Ping  <span id="router-ip-address">192.168.0.1</span> : <span class="text-info" id="router-ping-result">10</span><span> ms</span></h3> 
     <h3>Ping  <span id="antena-ip-address">192.168.88.1</span>( LHG ): <span class="text-info" id="antena-ping-result">10</span><span> ms</span></h3> 
     <h3>Ping  <span id="google-ip-address">8.8.8.8</span>( Google ): <span class="text-info" id="google-ping-result">10</span><span> ms</span></h3> 
     
     <div class="container mt-5">    
+=======
+
+    <div class="container mt-5">
+        
+>>>>>>> b1d33405dc68a124f8072cde417a396a49c9e7d0
     
         <form id="wifi-config-form" class="needs-validation" novalidate>
             <div class="mb-3">
                 <label for="wifi-name" class="form-label">Nuevo nombre de red WiFi</label>
+<<<<<<< HEAD
                 <div class="input-group">
                     <input type="text" class="form-control" id="wifi-name" required minlength="1" maxlength="32" pattern="^[a-zA-Z0-9 ]+$">
                     <span class="input-group-text" style="visibility: hidden;">
@@ -42,6 +49,13 @@
                 <div class="invalid-feedback">
                     El nombre debe tener entre 1 y 32 caracteres y solo puede contener letras sin tilde, números y espacios.
                 </div>
+=======
+                <input type="text" class="form-control" id="wifi-name" required minlength="1" maxlength="32" pattern="^[a-zA-Z0-9 ]+$">
+                <div class="invalid-feedback">
+                    El nombre debe tener entre 1 y 32 caracteres y solo puede contener letras, números y espacios.
+                </div>  
+            </div>
+>>>>>>> b1d33405dc68a124f8072cde417a396a49c9e7d0
             </div>
             <div class="mb-3">
                 <label for="wifi-password" class="form-label">Nueva contraseña WiFi</label>
@@ -87,6 +101,7 @@
         const wifiNameInput = document.getElementById('wifi-name');
         const networkAlert = document.getElementById('network-alert');
         const linkDamagedAlert = document.getElementById('link-damaged-alert');
+<<<<<<< HEAD
         const routerIpElement = document.getElementById('router-ip-address');
         const antenaIpElement = document.getElementById('antena-ip-address');
         const googleIpElement=document.getElementById('google-ip-address');
@@ -137,6 +152,9 @@
         }
 
         
+=======
+
+>>>>>>> b1d33405dc68a124f8072cde417a396a49c9e7d0
         
         function togglePasswordVisibility(inputField, toggleButton) {
             const type = inputField.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -155,6 +173,7 @@
 
         function validatePasswords() {
             const passwordMatchFeedback = document.getElementById('password-match-feedback');
+<<<<<<< HEAD
             let errorMessage = "";
 
             // Primero, verifica la longitud de la contraseña
@@ -171,6 +190,11 @@
                 passwordMatchFeedback.textContent = errorMessage;
                 passwordMatchFeedback.style.display = 'block';
                 statusMessage.style.display = 'none';
+=======
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                confirmPasswordInput.setCustomValidity("Las contraseñas no coinciden");
+                passwordMatchFeedback.style.display = 'block';
+>>>>>>> b1d33405dc68a124f8072cde417a396a49c9e7d0
             } else {
                 confirmPasswordInput.setCustomValidity("");
                 passwordMatchFeedback.style.display = 'none';
@@ -204,6 +228,7 @@
                 });
         }
     
+<<<<<<< HEAD
         
     
         form.addEventListener('submit', function(event) {
@@ -256,6 +281,57 @@
         setInterval(updateLinkDamagedStatus, 5000);
         // Initial status update
         updatePing();
+=======
+        setInterval(updateNetworkStatus, 5000);
+        setInterval(updateLinkDamagedStatus, 5000);
+    
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            validatePasswords();
+            
+    
+            if (form.checkValidity()) {
+                submitBtn.disabled = true;
+                statusMessage.style.display = 'none';
+    
+                const formData = {
+                    wifi_name: wifiNameInput.value.trim(),
+                    wifi_password: passwordInput.value
+                };
+    
+                fetch('/router/tenda/update_wifi', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    statusMessage.textContent = data.message;
+                    statusMessage.classList.remove('alert-success', 'alert-danger');
+                    statusMessage.classList.add(data.success ? 'alert-success' : 'alert-danger');
+                    statusMessage.style.display = 'block';
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    statusMessage.textContent = 'Ocurrió un error al procesar la solicitud.';
+                    statusMessage.classList.remove('alert-success', 'alert-danger');
+                    statusMessage.classList.add('alert-danger');
+                    statusMessage.style.display = 'block';
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                });
+            }
+    
+            form.classList.add('was-validated');
+        });
+    
+        // Initial update
+>>>>>>> b1d33405dc68a124f8072cde417a396a49c9e7d0
         updateNetworkStatus();
         updateLinkDamagedStatus();
     });

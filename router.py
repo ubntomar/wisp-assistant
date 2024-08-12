@@ -1,12 +1,17 @@
 import subprocess
 import re
 from flask import Blueprint, render_template, current_app
+<<<<<<< HEAD
 from flask import request, jsonify
 
 from time import sleep
 import requests
 from playwright.sync_api import sync_playwright
 import logging
+=======
+import subprocess
+from flask import request, jsonify
+>>>>>>> b1d33405dc68a124f8072cde417a396a49c9e7d0
 
 router_bp = Blueprint('router', __name__, url_prefix='/router')
 
@@ -227,6 +232,7 @@ def update_tenda_wifi():
     wifi_name = data.get('wifi_name')
     wifi_password = data.get('wifi_password')
 
+<<<<<<< HEAD
     try:
         response=configure_tenda(wifi_name, wifi_password)
         success = response['success']
@@ -257,3 +263,27 @@ def ping_router(ip_address):
             return jsonify({'success': False, 'error': 'No se pudo obtener el tiempo de ping'})
     except subprocess.CalledProcessError:
         return jsonify({'success': False, 'error': 'No se pudo hacer ping al router'})
+=======
+    # Aquí iría la lógica para actualizar la configuración del router Tenda
+    # Por ahora, simularemos una respuesta exitosa
+    
+    try:
+        # Simulación de la actualización del router
+        # En un escenario real, aquí llamarías a una función o script que se comunique con el router
+        # subprocess.run(['./update_tenda_wifi.sh', wifi_name, wifi_password], check=True)
+        
+        # Simulamos éxito
+        success = True
+        message = f"Configuración de WiFi actualizada success. Nuevo SSID: {wifi_name}"
+    except subprocess.CalledProcessError as e:
+        success = False
+        message = f"Error al actualizar la configuración de WiFi: {str(e)}"
+    except Exception as e:
+        success = False
+        message = f"Ocurrió un error inesperado: {str(e)}"
+
+    return jsonify({
+        'success': success,
+        'message': message
+    })
+>>>>>>> b1d33405dc68a124f8072cde417a396a49c9e7d0
