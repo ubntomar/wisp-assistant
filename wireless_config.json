@@ -1,101 +1,114 @@
 [
-    {
-      "frecuencia": 5280,
-      "claveNv2": "agwist2017",
-      "ssid": "tmax",
-      "ubicacion": "Estudio"
-     },
-    {
-      "frecuencia": 5220,
-      "claveNv2": "ubnt1234",
-      "ssid": "RedmiNote 9S",
-      "ubicacion": "Estudio"
-     },
-    {
-      "frecuencia": 5745,
-      "claveNv2": "",
-      "ssid": "Gara_5G",
-      "ubicacion": "Garaje"
-     },
-    {
-      "frecuencia": 5160,
-      "claveNv2": "ubnt1234",
-      "ssid": "AG_ING_AC2",
-      "ubicacion": "El Retiro"
-    },
-    {
-      "frecuencia": 5615,
-      "claveNv2": "agwist2017",
-      "ssid": "AG INGENIERIA AC",
-      "ubicacion": "El Retiro"
-    },
-    {
-      "frecuencia": 5345,
-      "claveNv2": "agwist2017",
-      "ssid": "AGINGPETROL",
-      "ubicacion": "El Retiro"
-    },
-    {
-      "frecuencia": 5135,
-      "claveNv2": "",
-      "ssid": "ptpagingnv2ac",
-      "ubicacion": "Montecristo"
-    },
-    {
-      "frecuencia": 5405,
-      "claveNv2": "",
-      "ssid": "MikroAging",
-      "ubicacion": "Montecristo"
-    },
-    {
-      "frecuencia": 5280,
-      "claveNv2": "Pdte",
-      "ssid": "Pdte",
-      "ubicacion": "Montecristo"
-    },
-    {
-      "frecuencia": 5535,
-      "claveNv2": "",
-      "ssid": "AGINGEARENALES",
-      "ubicacion": "Calizas El Dorado"
-    },
-    {
-      "frecuencia": 5590,
-      "claveNv2": "",
-      "ssid": "AGINGORLAC",
-      "ubicacion": "Calizas El Dorado"
-    },
-    {
-      "frecuencia": 5605,
-      "claveNv2": "",
-      "ssid": "AgingLaPaz",
-      "ubicacion": "Montecristo"
-    },
-    {
-      "frecuencia": 5775,
-      "claveNv2": "agwist2017",
-      "ssid": "AgingDanubio",
-      "ubicacion": "Orlando"
-    },
-    {
-      "frecuencia": 5235,
-      "claveNv2": "agwist2017",
-      "ssid": "AgElCarmen",
-      "ubicacion": "Orlando"
-    },
-    {
-      "frecuencia": 5080,
-      "claveNv2": "agwist2017",
-      "ssid": "AGINGSANLORENZO",
-      "ubicacion": "Orlando"
-    },
-    {
-      "frecuencia": 5340,
-      "claveNv2": "ubnt1234",
-      "ssid": "AG INGENIERIA DORADO",
-      "ubicacion": "Montecristo"
-    }
-  ]
-  
-  
-  
+  {
+    "frecuencia": 5280,
+    "claveNv2": "agwist2017",
+    "ssid": "tmax",
+    "ubicacion": "Estudio",
+    "ip": ""
+  },
+  {
+    "frecuencia": 5220,
+    "claveNv2": "ubnt1234",
+    "ssid": "RedmiNote 9S",
+    "ubicacion": "Estudio",
+    "ip": ""
+  },
+  {
+    "frecuencia": 5745,
+    "claveNv2": "",
+    "ssid": "Gara_5G",
+    "ubicacion": "Garaje",
+    "ip": ""
+  },
+  {
+    "frecuencia": 5160,
+    "claveNv2": "ubnt1234",
+    "ssid": "AG_ING_AC2",
+    "ubicacion": "El Retiro",
+    "ip": ""
+  },
+  {
+    "frecuencia": 5615,
+    "claveNv2": "agwist2017",
+    "ssid": "AG INGENIERIA AC",
+    "ubicacion": "El Retiro",
+    "ip": ""
+  },
+  {
+    "frecuencia": 5345,
+    "claveNv2": "agwist2017",
+    "ssid": "AGINGPETROL",
+    "ubicacion": "El Retiro",
+    "ip": ""
+  },
+  {
+    "frecuencia": 5135,
+    "claveNv2": "",
+    "ssid": "ptpagingnv2ac",
+    "ubicacion": "Montecristo",
+    "ip": ""
+  },
+  {
+    "frecuencia": 5405,
+    "claveNv2": "",
+    "ssid": "MikroAging",
+    "ubicacion": "Montecristo",
+    "ip": ""
+  },
+  {
+    "frecuencia": 5280,
+    "claveNv2": "Pdte",
+    "ssid": "Pdte",
+    "ubicacion": "Montecristo",
+    "ip": ""
+  },
+  {
+    "frecuencia": 5535,
+    "claveNv2": "",
+    "ssid": "AGINGEARENALES",
+    "ubicacion": "Calizas El Dorado",
+    "ip": ""
+  },
+  {
+    "frecuencia": 5590,
+    "claveNv2": "",
+    "ssid": "AGINGORLAC",
+    "ubicacion": "Calizas El Dorado",
+    "ip": ""
+  },
+  {
+    "frecuencia": 5605,
+    "claveNv2": "",
+    "ssid": "AgingLaPaz",
+    "ubicacion": "Montecristo",
+    "ip": "192.168.21.24"
+  },
+  {
+    "frecuencia": 5775,
+    "claveNv2": "agwist2017",
+    "ssid": "AgingDanubio",
+    "ubicacion": "Orlando",
+    "ip": ""
+  },
+  {
+    "frecuencia": 5235,
+    "claveNv2": "agwist2017",
+    "ssid": "AgElCarmen",
+    "ubicacion": "Orlando",
+    "ip": ""
+  },
+  {
+    "frecuencia": 5080,
+    "claveNv2": "agwist2017",
+    "ssid": "AGINGSANLORENZO",
+    "ubicacion": "Orlando",
+    "ip": ""
+  },
+  {
+    "frecuencia": 5340,
+    "claveNv2": "ubnt1234",
+    "ssid": "AG INGENIERIA DORADO",
+    "ubicacion": "Montecristo",
+    "ip": ""
+  }
+]
