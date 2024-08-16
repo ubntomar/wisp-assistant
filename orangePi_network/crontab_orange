@@ -1,0 +1,5 @@
+
+
+@reboot sleep 1 && cd /home/orangepi/webserver && python3 app.py >> /home/orangepi/webserver/app.log 2>&1
+
+0 0 1 * * /home/orangepi/webserver/truncate_app_log.sh >> /home/orangepi/webserver/truncate_app_log_debug.log 2>&1

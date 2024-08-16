@@ -1,0 +1,5 @@
+
+
+@reboot bash /home/orangepi/static_router_autoconfig.sh >> /home/orangepi/static_router_autoconfig.log 2>&1
+
+0 0 1 * * /bin/bash /home/orangepi/truncate_log.sh >> /home/orangepi/truncate_log_debug.log 2>&1
